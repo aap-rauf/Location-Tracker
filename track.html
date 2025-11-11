@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Share Location</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h2>Location Sharing</h2>
+      <p id="msg" class="small">This page will request permission to share your location with the requester. Only continue if you consent.</p>
+      <div style="margin-top:12px;">
+        <button id="start">Start Sharing</button>
+        <button id="stop" style="display:none;" class="ghost">Stop</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const token = location.pathname.split('/').pop();
+const reportUrl = '/report/' + token;
+let intervalId = null;
+
+document.getElementById('start').onclick = async () => {
+  const ok = confirm("This page will share your real-time location with the requester. Do you agree?");
+  if (!ok) return;
+  if (!('geolocation' in navigator)) { document.getElementById('msg').innerText = 'Geolocation not supported.'; return; }
+
+  function sendPosition(pos) {
+    const body = {
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude,
+      accuracy: pos.coords.accuracy
+    };
+    fetch(reportUrl, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) }).catch(()=>{});
+  }
+
+  navigator.geolocation.getCurrentPosition(sendPosition, (err) => { document.getElementById('msg').innerText = 'Permission denied or error: ' + err.message; }, { enableHighAccuracy: true, maximumAge: 0 });
+
+  intervalId = setInterval(() => {
+    navigator.geolocation.getCurrentPosition(sendPosition, (err) => { console.log('loc error', err && err.message); }, { enableHighAccuracy: true, maximumAge: 5000 });
+  }, 15000);
+
+  document.getElementById('start').style.display = 'none';
+  document.getElementById('stop').style.display = '';
+  document.getElementById('msg').innerText = 'Sharing location... keep this tab open to continue.';
+};
+
+document.getElementById('stop').onclick = () => {
+  if (intervalId) clearInterval(intervalId);
+  intervalId = null;
+  document.getElementById('start').style.display = '';
+  document.getElementById('stop').style.display = 'none';
+  document.getElementById('msg').innerText = 'Stopped.';
+};
+</script>
+</body>
+</html>
