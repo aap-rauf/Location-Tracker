@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
   <style>
-    #copyBtn {
+    #copyBtn, #openMap {
       background: var(--accent);
       color: white;
       border: none;
@@ -25,20 +25,26 @@
       font-size: 0.9em;
       display: none;
     }
+    a.link {
+      color: var(--accent);
+      word-break: break-all;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="card">
       <h1>Live Map Tracker</h1>
-      <p class="small">Generate a personal tracking link and share it.</p>
-      <input id="note" class="input" placeholder="Optional note" />
+      <p class="small">Generate a tracking link and share it with someone.</p>
+      <input id="note" class="input" placeholder="Optional note (e.g. Delivery #42)" />
       <div style="margin-top:8px;">
         <button id="create">Generate Link</button>
         <button id="copyBtn">Copy Tracking Link</button>
+        <button id="openMap">Open Live Map</button>
       </div>
       <div id="out" style="margin-top:12px;"></div>
-      <div id="copyMsg">Link copied to clipboard!</div>
+      <div id="copyMsg">✅ Link copied to clipboard!</div>
     </div>
   </div>
 
@@ -46,23 +52,35 @@
 document.getElementById('create').onclick = async () => {
   const note = document.getElementById('note').value.trim();
   const token = Math.random().toString(36).slice(2,10);
-  const base = location.origin + '/Location-Tracker'; // ✅ correct repo path
-  const url = `${base}/track.html#${token}`;
-  
+  const base = location.origin + '/Location-Tracker'; // ✅ repo path
+  const trackURL = `${base}/track.html#${token}`;
+  const viewURL = `${base}/view.html`;
+
+  // Save local data
   localStorage.setItem(token, JSON.stringify({ note, locations: [] }));
-  
+
+  // Show link
   document.getElementById('out').innerHTML = `
     <p><strong>Your tracking link:</strong></p>
-    <code id="link">${url}</code>
+    <a href="${trackURL}" target="_blank" class="link">${trackURL}</a>
   `;
-  
+
+  // Show buttons
   const copyBtn = document.getElementById('copyBtn');
+  const openMap = document.getElementById('openMap');
   copyBtn.style.display = 'inline-block';
+  openMap.style.display = 'inline-block';
   document.getElementById('copyMsg').style.display = 'none';
-  
+
+  // Copy link
   copyBtn.onclick = async () => {
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(trackURL);
     document.getElementById('copyMsg').style.display = 'block';
+  };
+
+  // Open Live Map
+  openMap.onclick = () => {
+    window.open(viewURL, '_blank');
   };
 };
 </script>
