@@ -13,18 +13,38 @@
   <div class="container">
     <div class="card">
       <h2>Share your location</h2>
+      <p id="noteDisplay" class="small" style="margin-bottom:8px;color:#9aa6b2;"></p>
       <p id="msg" class="small">This page will ask permission to share your location.</p>
       <button id="start">Start Sharing</button>
       <button id="stop" class="ghost" style="display:none;">Stop</button>
     </div>
   </div>
+
 <script>
 const token = location.hash.slice(1);
 let watchId = null;
 
+// ✅ Display note if available
+const stored = localStorage.getItem(token);
+if (stored) {
+  try {
+    const data = JSON.parse(stored);
+    if (data.note && data.note.trim()) {
+      document.getElementById('noteDisplay').textContent = '📍 Note: ' + data.note;
+    } else {
+      document.getElementById('noteDisplay').style.display = 'none';
+    }
+  } catch(e) {
+    console.error('Error reading note', e);
+  }
+} else {
+  document.getElementById('noteDisplay').style.display = 'none';
+}
+
+// ✅ Location sharing logic
 function send(pos) {
   const {latitude, longitude, accuracy} = pos.coords;
-  const data = JSON.parse(localStorage.getItem(token) || '{"locations":[]}');
+  const data = JSON.parse(localStorage.getItem(token) || '{"note":"","locations":[]}');
   data.locations.push({lat: latitude, lng: longitude, acc: accuracy, ts: Date.now()});
   localStorage.setItem(token, JSON.stringify(data));
 }
