@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Live View</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>#map{height:60vh;border-radius:12px;overflow:hidden;margin-top:12px}</style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h2>Live location viewer</h2>
+      <p class="small">Keep this page open to see live updates.</p>
+      <div id="map"></div>
+      <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
+        <div class="col"><div id="info" class="small">Status: <span id="status">Waiting for data...</span></div></div>
+        <div><button id="recenter" class="ghost">Recenter</button></div>
+      </div>
+      <h3 style="margin-top:12px">Recent points</h3>
+      <table class="table" id="points"><thead><tr><th>Time</th><th>Lat</th><th>Lng</th><th>Acc (m)</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+<script>
+const token = location.pathname.split('/').pop();
+const latestUrl = '/api/latest/' + token;
+const allUrl = '/api/all/' + token;
+const map = L.map('map').setView([20,0],2);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'&copy; OpenStreetMap contributors & CartoDB' }).addTo(map);
+let poly = L.polyline([], { weight:4, opacity:0.9 }).addTo(map);
+let marker = null;
+function formatTs(ts){ if(!ts) return '-'; return new Date(ts).toLocaleString(); }
+async function fetchAll(){ try{ const res = await fetch(allUrl, {cache:'no-store'}); if(!res.ok){ document.getElementById('status').innerText='No data'; return; } const json = await res.json(); const points = json.locations || []; if(!points.length){ document.getElementById('status').innerText='No points yet'; return; } const tbody=document.querySelector('#points tbody'); tbody.innerHTML=''; const last10 = points.slice(-10).reverse(); last10.forEach(p=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td class="small">${formatTs(p.ts)}</td><td>${p.lat.toFixed(6)}</td><td>${p.lng.toFixed(6)}</td><td>${p.acc ?? '-'}</td>`; tbody.appendChild(tr); }); poly.setLatLngs(points.map(p=>[p.lat,p.lng])); const latest = points[points.length-1]; if(!marker) marker = L.marker([latest.lat, latest.lng]).addTo(map); else marker.setLatLng([latest.lat, latest.lng]); document.getElementById('status').innerText=`Last update: ${formatTs(latest.ts)}`; }catch(e){ console.error(e); document.getElementById('status').innerText='Fetch error'; } }
+async function fetchLatest(){ try{ const res = await fetch(latestUrl, {cache:'no-store'}); if(!res.ok) return; const p = await res.json(); if(!p) return; if(!marker){ marker = L.marker([p.lat,p.lng]).addTo(map); map.setView([p.lat,p.lng],15); } else marker.setLatLng([p.lat,p.lng]); const coords = poly.getLatLngs(); coords.push([p.lat,p.lng]); poly.setLatLngs(coords); document.getElementById('status').innerText=`Last update: ${formatTs(p.ts)}`; }catch(e){} }
+fetchAll(); setInterval(fetchLatest,3000); setInterval(fetchAll,5000);
+document.getElementById('recenter').onclick = ()=>{ if(!poly.getLatLngs().length) return; map.fitBounds(poly.getBounds(), { maxZoom:17, padding:[40,40] }); };
+</script>
+</body>
+</html>
