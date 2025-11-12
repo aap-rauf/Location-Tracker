@@ -8,31 +8,62 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
+  <style>
+    #copyBtn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      margin-top: 8px;
+      display: none;
+    }
+    #copyMsg {
+      color: var(--muted);
+      margin-top: 8px;
+      font-size: 0.9em;
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <div class="card">
       <h1>Live Map Tracker</h1>
-      <p class="small">Create a tracking link and send it. The recipient must consent to share their location.</p>
+      <p class="small">Generate a personal tracking link and share it.</p>
       <input id="note" class="input" placeholder="Optional note" />
       <div style="margin-top:8px;">
-        <button id="create">Create Link</button>
+        <button id="create">Generate Link</button>
+        <button id="copyBtn">Copy Tracking Link</button>
       </div>
       <div id="out" style="margin-top:12px;"></div>
+      <div id="copyMsg">✅ Link copied to clipboard!</div>
     </div>
   </div>
+
 <script>
 document.getElementById('create').onclick = async () => {
-  const note = document.getElementById('note').value;
+  const note = document.getElementById('note').value.trim();
   const token = Math.random().toString(36).slice(2,10);
-  const url = location.origin + '/Location-Tracker/track.html#' + token;
-  localStorage.setItem(token, JSON.stringify({locations: []}));
+  const base = location.origin + '/Location-Tracker'; // ✅ correct repo path
+  const url = `${base}/track.html#${token}`;
+  
+  localStorage.setItem(token, JSON.stringify({ note, locations: [] }));
+  
   document.getElementById('out').innerHTML = `
-    <p>Send this link:</p>
-    <p><a href="${url}" target="_blank">${url}</a></p>
-    <p class="small">SMS shortcut:</p>
-    <code>sms:?body=${encodeURIComponent('Please share your location: ' + url)}</code>
+    <p><strong>Your tracking link:</strong></p>
+    <code id="link">${url}</code>
   `;
+  
+  const copyBtn = document.getElementById('copyBtn');
+  copyBtn.style.display = 'inline-block';
+  document.getElementById('copyMsg').style.display = 'none';
+  
+  copyBtn.onclick = async () => {
+    await navigator.clipboard.writeText(url);
+    document.getElementById('copyMsg').style.display = 'block';
+  };
 };
 </script>
 </body>
