@@ -1,45 +1,87 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Live View</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Live Map Tracker - View</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icons/icon-192.png">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <style>#map{height:60vh;border-radius:12px;overflow:hidden;margin-top:12px}</style>
+  <style>
+    #map {
+      width: 100%;
+      height: 70vh;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+    #note {
+      color: var(--muted);
+      margin-top: 6px;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <div class="card">
-      <h2>Live location viewer</h2>
+      <h1>Live Map Tracker</h1>
+      <p class="small">View the real-time location shared with you.</p>
+      <div id="note"></div>
       <div id="map"></div>
-      <p class="small" id="status">Waiting for data...</p>
     </div>
   </div>
-<script>
-const token = prompt("Enter tracking code:");
-const map = L.map('map').setView([0,0],2);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'&copy; OpenStreetMap & CartoDB' }).addTo(map);
-let marker = null;
 
-function update() {
-  const data = JSON.parse(localStorage.getItem(token) || '{"locations":[]}');
-  const locs = data.locations;
-  if (locs.length) {
-    const last = locs[locs.length-1];
-    if (!marker) marker = L.marker([last.lat,last.lng]).addTo(map);
-    else marker.setLatLng([last.lat,last.lng]);
-    map.setView([last.lat,last.lng],15);
-    document.getElementById('status').textContent = 'Last update: ' + new Date(last.ts).toLocaleTimeString();
-  } else {
-    document.getElementById('status').textContent = 'No data yet';
+  <script>
+  async function init() {
+    // ✅ Automatically get token from URL hash
+    const token = location.hash.slice(1).trim();
+
+    if (!token) {
+      document.querySelector('.card').innerHTML = `
+        <p>Please open this page using a valid tracking link.</p>
+      `;
+      return;
+    }
+
+    // Load saved data
+    const data = JSON.parse(localStorage.getItem(token) || '{}');
+    const note = data.note || '';
+
+    // Show note
+    if (note) {
+      document.getElementById('note').textContent = "Note: " + note;
+    }
+
+    // Initialize map
+    const mapDiv = document.getElementById('map');
+    const map = L.map(mapDiv).setView([0, 0], 2);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const marker = L.marker([0, 0]).addTo(map);
+    
+    function updateLocation() {
+      const updated = JSON.parse(localStorage.getItem(token) || '{}');
+      if (updated.locations && updated.locations.length > 0) {
+        const { lat, lon } = updated.locations[updated.locations.length - 1];
+        marker.setLatLng([lat, lon]);
+        map.setView([lat, lon], 14);
+      }
+    }
+
+    // Update every 5 seconds
+    updateLocation();
+    setInterval(updateLocation, 5000);
   }
-}
-setInterval(update, 3000);
-</script>
+
+  // ✅ Run immediately
+  init();
+  </script>
+
+  <!-- Add Leaflet library -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </body>
 </html>
