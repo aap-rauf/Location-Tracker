@@ -25,7 +25,7 @@
 document.getElementById('create').onclick = async () => {
   const note = document.getElementById('note').value;
   const token = Math.random().toString(36).slice(2,10);
-  const url = location.origin + '/track.html#' + token;
+  const url = location.origin + '/Location-Tracker/track.html#' + token;
   localStorage.setItem(token, JSON.stringify({locations: []}));
   document.getElementById('out').innerHTML = `
     <p>Send this link:</p>
