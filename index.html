@@ -54,7 +54,7 @@ document.getElementById('create').onclick = async () => {
   const token = Math.random().toString(36).slice(2,10);
   const base = location.origin + '/Location-Tracker'; // ✅ repo path
   const trackURL = `${base}/track.html#${token}`;
-  const viewURL = `${base}/view.html`;
+  const viewURL = `${base}/view.html#${token}`;
 
   // Save local data
   localStorage.setItem(token, JSON.stringify({ note, locations: [] }));
