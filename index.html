@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Live Map Tracker - Create Link</title>
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" href="/icons/icon-192.png">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
@@ -24,14 +24,14 @@
 <script>
 document.getElementById('create').onclick = async () => {
   const note = document.getElementById('note').value;
-  const res = await fetch('/create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ note }) });
-  const j = await res.json();
-  const url = location.origin + j.url;
+  const token = Math.random().toString(36).slice(2,10);
+  const url = location.origin + '/track.html#' + token;
+  localStorage.setItem(token, JSON.stringify({locations: []}));
   document.getElementById('out').innerHTML = `
     <p>Send this link:</p>
     <p><a href="${url}" target="_blank">${url}</a></p>
     <p class="small">SMS shortcut:</p>
-    <code>sms:?body=${encodeURIComponent('Please share your location: ' + '${url}')}</code>
+    <code>sms:?body=${encodeURIComponent('Please share your location: ' + url)}</code>
   `;
 };
 </script>
